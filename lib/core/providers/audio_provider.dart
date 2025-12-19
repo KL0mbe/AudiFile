@@ -1,13 +1,11 @@
 import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 import 'package:audio_player/core/services/database_service.dart';
 import 'package:audio_player/core/models/file_data.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_player/core/app_init.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
-import 'package:mime/mime.dart';
 import 'package:path/path.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -20,16 +18,10 @@ class AudioProvider extends ChangeNotifier {
 
   List<FileData> _files = [];
   List<FileData> get files => _files;
-  late Directory libDirectory;
-
-  String get coverPath => '${libDirectory.path}/media/${currentFile!.cover}';
 
   Future<void> init() async {
     await loadFiles();
     await loadCurrentFile();
-    // for testing only not permanent solution
-    // refactor to cache directory in app init
-    libDirectory = await getLibraryDirectory();
   }
 
   Future<void> loadCurrentFile() async {
@@ -59,15 +51,29 @@ class AudioProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateCurrentFile(FileData file) async {
+    // Maybe just pass the FileData directly
+    // we just pass it its db that extracts and does
+    // what it wants with it
+    await dbService.updateFile(
+      file.path,
+      file.title,
+      jsonEncode(file.author),
+      file.cover,
+      file.fastForward.toString(),
+      file.rewind.toString(),
+      file.isSkip,
+    );
+    await loadCurrentFile();
+    notifyListeners();
+  }
+
   Future<void> pickFiles() async {
-    final dir = await getApplicationDocumentsDirectory();
-    final libDir = await getLibraryDirectory();
-    final stableDir = Directory("${libDir.path}/media");
-    if (!await stableDir.exists()) await stableDir.create(recursive: true);
+    if (!await mediaDir.exists()) await mediaDir.create(recursive: true);
 
     final result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
-      initialDirectory: dir.path,
+      initialDirectory: appDir.path,
       type: FileType.custom,
       allowedExtensions: [
         // audio files
@@ -82,25 +88,41 @@ class AudioProvider extends ChangeNotifier {
     final files = result.paths.map((path) => File(path!)).toList();
     for (final file in files) {
       final basePath = basename(file.path);
-      final dest = File("${stableDir.path}/${basename(file.path)}");
+      final dest = File("${mediaDir.path}/${basename(file.path)}");
 
       if (await dbService.containsFile(basePath)) continue;
 
       await file.copy(dest.path);
       final metadata = await MetadataRetriever.fromFile(dest);
-      final mimeType = lookupMimeType("", headerBytes: metadata.albumArt);
-      final ext = mimeType?.split("/").last ?? "png";
-      final coverPath = "${basenameWithoutExtension(dest.path)}_cover.$ext";
+      final coverPath = "${basenameWithoutExtension(dest.path)}_cover";
       if (metadata.albumArt != null) {
-        await File("${stableDir.path}/$coverPath").writeAsBytes(metadata.albumArt!);
+        await File("${mediaDir.path}/$coverPath").writeAsBytes(metadata.albumArt!);
       } else {
         final data = await rootBundle.load("assets/media/avatar.png");
         final bytes = data.buffer.asUint8List();
-        File("${stableDir.path}/$coverPath").writeAsBytes(bytes);
+        File("${mediaDir.path}/$coverPath").writeAsBytes(bytes);
       }
       // bool isSong = ["mp3", "m4a", "aac", "wav", "flac"].contains(extension(file.path));
       await dbService.insertFile(basePath, metadata.trackName ?? "", jsonEncode(metadata.trackArtistNames), coverPath);
     }
     await loadFiles();
   }
+
+  // Future<void> pickCoverArt(/*pass in xfile perhaps*/) async {
+  //   final picker = ImagePicker();
+  //   final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+  //   if (image == null) return;
+  //   final bytes = await image.readAsBytes();
+  //   print("pre temp");
+  //   await File("${tempDir.path}/${currentFile!.cover}").writeAsBytes(bytes);
+  //   print("post temp");
+  //   await File(currentFile!.coverPath).writeAsBytes(bytes);
+  //   final oldPath = currentFile!.coverPath;
+  //   print("pre set temp");
+  //   updateCurrentFile(currentFile!.copyWith(cover: "${tempDir.path}/${currentFile!.cover}"));
+  //   print("post set temp");
+  //   updateCurrentFile(currentFile!.copyWith(cover: oldPath));
+  //   print("post old path");
+  //   notifyListeners();
+  // }
 }

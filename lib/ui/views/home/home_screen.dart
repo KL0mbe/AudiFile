@@ -1,3 +1,4 @@
+import 'package:audio_player/ui/views/playback_settings/playback_settings_screen.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
 import 'package:audio_player/core/providers/audio_provider.dart';
@@ -43,13 +44,25 @@ class HomeScreen extends StatelessWidget {
               ? MyBodyText("Select a file to play")
               : Column(
                   children: [
-                    Gap(64.h),
+                    Align(
+                      alignment: AlignmentGeometry.topRight,
+                      child: MyTextButton(
+                        "Edit",
+                        icon: Icon(Icons.edit, color: Colors.black),
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => PlaybackSettingsScreen())),
+                      ),
+                    ),
+                    Gap(32.h),
                     MyBodyText.semiBold(audioProvider.currentFile!.title),
                     Gap(24.h),
                     SizedBox(
                       width: 300.h,
                       height: 300.h,
-                      child: Image(image: FileImage(File(audioProvider.coverPath))),
+                      child: Image.memory(
+                        File(audioProvider.currentFile!.coverPath).readAsBytesSync(),
+                        gaplessPlayback: true,
+                      ),
                     ),
                     Gap(24.h),
                     PlaybackSection(),

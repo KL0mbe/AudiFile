@@ -1,3 +1,5 @@
+import 'package:audio_player/core/app_init.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:path/path.dart';
 import 'dart:convert';
 
@@ -17,14 +19,91 @@ class FileData {
 
   final int id;
   final String path;
-  final String title;
-  final List<String> author;
-  final String cover;
-  final int fastForward;
-  final int rewind;
+  String title;
+  List<String> author;
+  String cover;
+  int fastForward;
+  int rewind;
+  // probably not final either for audiobooks/podcasts
   final double lastPosition;
-  final bool isSkip;
-  final double speed;
+  bool isSkip;
+  double speed;
+
+  String get coverPath => "${mediaDir.path}/$cover";
+
+  IconData get getFastForwardIcon {
+    if (isSkip) {
+      return CupertinoIcons.forward_fill;
+    }
+    switch (fastForward) {
+      case 5:
+        // get custom icon
+        return CupertinoIcons.goforward;
+      case 10:
+        return CupertinoIcons.goforward_10;
+      case 15:
+        return CupertinoIcons.goforward_15;
+      case 30:
+        return CupertinoIcons.goforward_30;
+      case 45:
+        return CupertinoIcons.goforward_45;
+      case 60:
+        return CupertinoIcons.goforward_60;
+      case 1000:
+        return CupertinoIcons.forward_fill;
+      default:
+        return CupertinoIcons.forward_fill;
+    }
+  }
+
+  IconData get getRewindIcon {
+    if (isSkip) {
+      return CupertinoIcons.backward_fill;
+    }
+    switch (rewind) {
+      case 5:
+        // get custom icon
+        return CupertinoIcons.gobackward;
+      case 10:
+        return CupertinoIcons.gobackward_10;
+      case 15:
+        return CupertinoIcons.gobackward_15;
+      case 30:
+        return CupertinoIcons.gobackward_30;
+      case 45:
+        return CupertinoIcons.gobackward_45;
+      case 60:
+        return CupertinoIcons.gobackward_60;
+      case 1000:
+        return CupertinoIcons.backward_fill;
+      default:
+        return CupertinoIcons.backward_fill;
+    }
+  }
+
+  FileData copy() => FileData.fromMap(toJson());
+
+  FileData copyWith({
+    String? path,
+    String? title,
+    List<String>? author,
+    String? cover,
+    int? fastForward,
+    int? rewind,
+    double? lastPosition,
+    bool? isSkip,
+    double? speed,
+  }) {
+    return FileData(
+      id: id,
+      path: path ?? this.path,
+      title: title ?? this.title,
+      author: author ?? this.author,
+      cover: cover ?? this.cover,
+      fastForward: fastForward ?? this.fastForward,
+      rewind: rewind ?? this.rewind,
+    );
+  }
 
   factory FileData.fromMap(Map<String, Object?> map) {
     final decoded = jsonDecode(map["author"] as String);
@@ -34,7 +113,7 @@ class FileData {
       title: (map["title"] as String) != ""
           ? (map["title"] as String)
           : basenameWithoutExtension(map["path"] as String),
-      author: List<String>.from((decoded is List && decoded.isNotEmpty) ? decoded : ["Unknown"]),
+      author: List<String>.from((decoded != null && decoded is List && decoded.isNotEmpty) ? decoded : ["Unknown"]),
       // could get lib dir in here and set it right away
       cover: map["cover"] as String,
       fastForward: map["fast_forward"] as int,
@@ -44,4 +123,17 @@ class FileData {
       speed: map["speed"] as double,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+    "id": id,
+    "path": path,
+    "title": title,
+    "author": jsonEncode(author),
+    "cover": cover,
+    "fast_forward": fastForward,
+    "rewind": rewind,
+    "last_position": lastPosition,
+    "is_skip": isSkip == true ? 1 : 0,
+    "speed": speed,
+  };
 }

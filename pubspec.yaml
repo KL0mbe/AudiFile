@@ -20,6 +20,7 @@ dependencies:
   flutter_screenutil: ^5.9.3
   gap: ^3.0.1
   get_it: ^9.0.5
+  image_picker: ^1.2.1
   just_audio: ^0.10.5
   just_audio_background: ^0.0.1-beta.17
   mime: ^2.0.0

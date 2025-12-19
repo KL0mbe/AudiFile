@@ -1,11 +1,14 @@
-import 'package:path_provider/path_provider.dart';
+import 'package:audio_player/core/providers/audio_provider.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
+import 'package:audio_player/core/app_init.dart';
 import 'package:just_audio/just_audio.dart';
 import 'dart:math';
 import 'dart:io';
 
 Future<AudioHandler> initAudioHandler() async {
+  // circular dependency cant call AudioProvider
+  // final audioProvider = getIt<AudioProvider>();
   return await AudioService.init(
     builder: () => MyAudioHandler(),
     config: const AudioServiceConfig(fastForwardInterval: Duration(seconds: 15), rewindInterval: Duration(seconds: 15)),
@@ -14,6 +17,7 @@ Future<AudioHandler> initAudioHandler() async {
 
 class MyAudioHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
+  final audioProvider = getIt<AudioProvider>();
 
   AudioPlayer get player => _player;
 
@@ -33,14 +37,34 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> fastForward() async {
+    if (audioProvider.currentFile!.isSkip) {
+      // this doesnt make sense to me why both
+      // it would skip to the end of the next track no?
+      // also can clamp using duration directly no need for seconds
+      await _player.seekToNext();
+      await _player.seek(Duration(seconds: _player.duration!.inSeconds));
+      return;
+    }
     await _player.seek(
-      Duration(seconds: min((_player.position + Duration(seconds: 15)).inSeconds, _player.duration!.inSeconds)),
+      Duration(
+        seconds: min(
+          (_player.position + Duration(seconds: audioProvider.currentFile!.fastForward)).inSeconds,
+          _player.duration!.inSeconds,
+        ),
+      ),
     );
   }
 
   @override
-  Future<void> rewind() async =>
-      await _player.seek(Duration(seconds: max((_player.position - Duration(seconds: 15)).inSeconds, 0)));
+  Future<void> rewind() async {
+    if (audioProvider.currentFile!.isSkip) {
+      await _player.seek(Duration(seconds: 0));
+      return;
+    }
+    await _player.seek(
+      Duration(seconds: max((_player.position - Duration(seconds: audioProvider.currentFile!.rewind)).inSeconds, 0)),
+    );
+  }
 
   @override
   Future<void> skipToNext() async => await fastForward();
@@ -52,10 +76,8 @@ class MyAudioHandler extends BaseAudioHandler {
   // ignore: avoid_renaming_method_parameters
   Future<void> playMediaItem(MediaItem item) async {
     _player.pause();
-    final libDir = await getLibraryDirectory();
-    final stableDir = Directory("${libDir.path}/media");
-    final path = "${stableDir.path}/${item.extras?["path"]}";
-    final coverPath = "${stableDir.path}/${item.extras?["coverPath"]}";
+    final path = "${mediaDir.path}/${item.extras?["path"]}";
+    final coverPath = "${mediaDir.path}/${item.extras?["coverPath"]}";
     final exists = await File(path).exists();
     print("Play path: $path");
     print("cover path: $coverPath");

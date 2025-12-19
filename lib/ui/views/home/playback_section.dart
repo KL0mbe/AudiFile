@@ -1,8 +1,11 @@
 import 'package:audio_player/ui/widgets/app_defaults/my_icon_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
+import 'package:audio_player/core/providers/audio_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_player/core/app_init.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 import 'dart:math';
@@ -40,6 +43,7 @@ class _PlaybackSectionState extends State<PlaybackSection> {
 
   @override
   Widget build(BuildContext context) {
+    final audioProvider = context.watch<AudioProvider>();
     return Column(
       children: [
         Padding(
@@ -64,12 +68,12 @@ class _PlaybackSectionState extends State<PlaybackSection> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            MyIconButton(icon: Icons.fast_rewind, onPressed: () => handler.rewind()),
+            MyIconButton(icon: audioProvider.currentFile!.getRewindIcon, onPressed: () => handler.rewind()),
             MyIconButton(
-              icon: handler.playbackState.value.playing ? Icons.pause : Icons.play_arrow,
+              icon: handler.playbackState.value.playing ? CupertinoIcons.pause_fill : CupertinoIcons.play_arrow_solid,
               onPressed: () => handler.playbackState.value.playing ? handler.pause() : handler.play(),
             ),
-            MyIconButton(icon: Icons.fast_forward, onPressed: () => handler.fastForward()),
+            MyIconButton(icon: audioProvider.currentFile!.getFastForwardIcon, onPressed: () => handler.fastForward()),
           ],
         ),
       ],

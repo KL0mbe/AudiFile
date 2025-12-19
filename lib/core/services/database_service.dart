@@ -32,6 +32,21 @@ class DatabaseService {
         isSong,
       ]);
 
+  Future<void> updateFile(
+    String path,
+    String title,
+    String author,
+    String cover,
+    String fastForward,
+    String rewind,
+    bool iSSkip,
+  ) async {
+    await _db.execute(
+      "UPDATE files SET title = ?, author = ?, cover = ?, fast_forward = ?, rewind = ?, is_skip = ? WHERE path = ?",
+      [title, author, cover, fastForward, rewind, iSSkip, path],
+    );
+  }
+
   Future<bool> containsFile(String path) async {
     final result = await _db.rawQuery("SELECT * FROM files WHERE path = ?", [path]);
     return result.isNotEmpty;
