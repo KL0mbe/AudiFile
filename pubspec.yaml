@@ -18,6 +18,7 @@ dependencies:
   file_picker: ^10.3.3
   flutter_media_metadata: ^1.0.0+1
   flutter_screenutil: ^5.9.3
+  flutter_sficon: ^1.2.1
   gap: ^3.0.1
   get_it: ^9.0.5
   image_picker: ^1.2.1

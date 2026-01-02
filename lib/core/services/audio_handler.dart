@@ -3,15 +3,19 @@ import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:audio_player/core/app_init.dart';
 import 'package:just_audio/just_audio.dart';
+import 'database_service.dart';
 import 'dart:math';
 import 'dart:io';
 
 Future<AudioHandler> initAudioHandler() async {
-  // circular dependency cant call AudioProvider
-  // final audioProvider = getIt<AudioProvider>();
+  final dbService = getIt<DatabaseService>();
+  final currentFile = await dbService.getCurrentFile();
   return await AudioService.init(
     builder: () => MyAudioHandler(),
-    config: const AudioServiceConfig(fastForwardInterval: Duration(seconds: 15), rewindInterval: Duration(seconds: 15)),
+    config: AudioServiceConfig(
+      rewindInterval: Duration(seconds: currentFile?.rewind ?? 5),
+      fastForwardInterval: Duration(seconds: currentFile?.fastForward ?? 5),
+    ),
   );
 }
 
@@ -107,8 +111,9 @@ class MyAudioHandler extends BaseAudioHandler {
             MediaAction.pause,
             MediaAction.play,
             MediaAction.seek,
-            MediaAction.fastForward,
-            MediaAction.rewind,
+            if (audioProvider.currentFile != null && audioProvider.currentFile!.fastForward != 1000)
+              MediaAction.fastForward,
+            if (audioProvider.currentFile != null && audioProvider.currentFile!.rewind != 1000) MediaAction.rewind,
             MediaAction.skipToNext,
             MediaAction.skipToPrevious,
           },

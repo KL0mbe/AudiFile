@@ -230,6 +230,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.9.3"
+  flutter_sficon:
+    dependency: "direct main"
+    description:
+      name: flutter_sficon
+      sha256: "7a8b82eefeea0655ed470b1b5bba2c14bb562b62127d7a0b4cb1498f4f9591e0"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.1"
   flutter_test:
     dependency: "direct dev"
     description: flutter

@@ -3,6 +3,7 @@ import 'package:audio_player/ui/views/playback_settings/widgets/text_row.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_app_bar.dart';
+import 'package:audio_player/core/helpers/ios_remote_intervals.dart';
 import 'package:audio_player/core/providers/audio_provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:audio_player/core/models/file_data.dart';
@@ -129,6 +130,11 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                         if (!_formKey.currentState!.validate()) return;
                         await File(currentFileCopy.coverPath).writeAsBytes(tempBytes);
                         audioProvider.updateCurrentFile(currentFileCopy);
+                        setBackwardInterval(enabled: currentFileCopy.rewind != 1000, seconds: currentFileCopy.rewind);
+                        setForwardInterval(
+                          enabled: currentFileCopy.fastForward != 1000,
+                          seconds: currentFileCopy.fastForward,
+                        );
                         if (context.mounted) Navigator.pop(context);
                       },
                     ),

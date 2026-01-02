@@ -1,3 +1,4 @@
+import 'package:flutter_sficon/flutter_sficon.dart';
 import 'package:audio_player/core/app_init.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:path/path.dart';
@@ -37,8 +38,7 @@ class FileData {
     }
     switch (fastForward) {
       case 5:
-        // get custom icon
-        return CupertinoIcons.goforward;
+        return SFIcons.sf_5_arrow_trianglehead_clockwise;
       case 10:
         return CupertinoIcons.goforward_10;
       case 15:
@@ -62,8 +62,7 @@ class FileData {
     }
     switch (rewind) {
       case 5:
-        // get custom icon
-        return CupertinoIcons.gobackward;
+        return SFIcons.sf_5_arrow_trianglehead_counterclockwise;
       case 10:
         return CupertinoIcons.gobackward_10;
       case 15:
