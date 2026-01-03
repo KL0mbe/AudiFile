@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_player/core/providers/audio_provider.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
@@ -22,6 +24,7 @@ Future<AudioHandler> initAudioHandler() async {
 class MyAudioHandler extends BaseAudioHandler {
   final _player = AudioPlayer();
   final audioProvider = getIt<AudioProvider>();
+  StreamSubscription<Duration?>? _durationSub;
 
   AudioPlayer get player => _player;
 
@@ -35,6 +38,14 @@ class MyAudioHandler extends BaseAudioHandler {
 
   @override
   Future<void> pause() async => await _player.pause();
+
+  @override
+  Future<void> stop() async {
+    await _durationSub?.cancel();
+    _durationSub = null;
+    await _player.stop();
+    await super.stop();
+  }
 
   @override
   Future<void> seek(Duration position) async => await _player.seek(position);
@@ -79,22 +90,28 @@ class MyAudioHandler extends BaseAudioHandler {
   @override
   // ignore: avoid_renaming_method_parameters
   Future<void> playMediaItem(MediaItem item) async {
-    _player.pause();
+    await _player.pause();
     final path = "${mediaDir.path}/${item.extras?["path"]}";
-    final coverPath = "${mediaDir.path}/${item.extras?["coverPath"]}";
-    final exists = await File(path).exists();
-    print("Play path: $path");
-    print("cover path: $coverPath");
-    print("Exists on disk: $exists");
-    mediaItem.add(item.copyWith(artUri: Uri.file(coverPath)));
+    mediaItem.add(item);
 
     await _player.setAudioSource(AudioSource.file(path));
-    _player.durationStream.listen((duration) {
+    await _durationSub?.cancel();
+    _durationSub = _player.durationStream.listen((duration) {
       if (duration == null) return;
       final current = mediaItem.value;
       if (current == null) return;
       mediaItem.add(current.copyWith(duration: duration));
     });
+  }
+
+  @override
+  // ignore: avoid_renaming_method_parameters
+  Future<void> updateMediaItem(MediaItem item) async {
+    final merged = item.copyWith(
+      duration: item.duration ?? mediaItem.value?.duration,
+      extras: item.extras ?? mediaItem.value?.extras,
+    );
+    mediaItem.add(merged);
   }
 
   Future<void> _init() async {
@@ -105,15 +122,17 @@ class MyAudioHandler extends BaseAudioHandler {
   void _notifyAudioHandlerAboutPlaybackEvents() {
     _player.playbackEventStream.listen((PlaybackEvent event) {
       final playing = _player.playing;
+      final file = audioProvider.currentFile;
+      final showFF = file != null && file.fastForward != 1000 && !file.isSkip;
+      final showRewind = file != null && file.rewind != 1000 && !file.isSkip;
       playbackState.add(
         playbackState.value.copyWith(
           systemActions: {
             MediaAction.pause,
             MediaAction.play,
             MediaAction.seek,
-            if (audioProvider.currentFile != null && audioProvider.currentFile!.fastForward != 1000)
-              MediaAction.fastForward,
-            if (audioProvider.currentFile != null && audioProvider.currentFile!.rewind != 1000) MediaAction.rewind,
+            if (showFF) MediaAction.fastForward,
+            if (showRewind) MediaAction.rewind,
             MediaAction.skipToNext,
             MediaAction.skipToPrevious,
           },

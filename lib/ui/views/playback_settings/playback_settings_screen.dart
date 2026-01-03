@@ -129,12 +129,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                       onPressed: () async {
                         if (!_formKey.currentState!.validate()) return;
                         await File(currentFileCopy.coverPath).writeAsBytes(tempBytes);
-                        audioProvider.updateCurrentFile(currentFileCopy);
-                        setBackwardInterval(enabled: currentFileCopy.rewind != 1000, seconds: currentFileCopy.rewind);
-                        setForwardInterval(
-                          enabled: currentFileCopy.fastForward != 1000,
-                          seconds: currentFileCopy.fastForward,
-                        );
+                        await audioProvider.updateCurrentFile(currentFileCopy, tempBytes);
                         if (context.mounted) Navigator.pop(context);
                       },
                     ),

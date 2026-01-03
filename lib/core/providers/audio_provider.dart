@@ -1,3 +1,4 @@
+import 'package:audio_player/core/helpers/ios_remote_intervals.dart';
 import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 import 'package:audio_player/core/services/database_service.dart';
 import 'package:audio_player/core/models/file_data.dart';
@@ -27,8 +28,7 @@ class AudioProvider extends ChangeNotifier {
   Future<void> loadCurrentFile() async {
     _currentFile = await dbService.getCurrentFile();
     if (_currentFile != null) {
-      setCurrentFile(_currentFile!);
-      notifyListeners();
+      await setCurrentFile(_currentFile!);
     }
   }
 
@@ -44,14 +44,15 @@ class AudioProvider extends ChangeNotifier {
       id: file.id.toString(),
       title: file.title,
       artist: file.author.first,
-      extras: {'path': file.path, "coverPath": file.cover},
+      artUri: Uri.file("${mediaDir.path}/${file.cover}"),
+      extras: {'path': file.path},
     );
     await getIt<AudioHandler>().playMediaItem(mediaItem);
     _currentFile = file;
     notifyListeners();
   }
 
-  Future<void> updateCurrentFile(FileData file) async {
+  Future<void> updateCurrentFile(FileData file, Uint8List artWorkBytes) async {
     // Maybe just pass the FileData directly
     // we just pass it its db that extracts and does
     // what it wants with it
@@ -64,7 +65,24 @@ class AudioProvider extends ChangeNotifier {
       file.rewind.toString(),
       file.isSkip,
     );
-    await loadCurrentFile();
+    // refactor this as we use it in setcurrentfile too
+    final mediaItem = MediaItem(
+      id: file.id.toString(),
+      title: file.title,
+      artist: file.author.first,
+      artUri: Uri.file("${mediaDir.path}/${file.cover}"),
+      extras: {'path': file.path},
+    );
+    await getIt<AudioHandler>().updateMediaItem(mediaItem);
+    await iosApplyNowPlayingOverride(
+      title: file.title,
+      artist: file.author.first,
+      fastForward: file.fastForward,
+      rewind: file.rewind,
+      artworkBytes: artWorkBytes,
+      isSkip: file.isSkip,
+    );
+    _currentFile = file;
     notifyListeners();
   }
 
