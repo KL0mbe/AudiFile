@@ -1,10 +1,10 @@
 import 'package:audio_player/ui/views/playback_settings/playback_settings_screen.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
-import 'package:audio_player/core/providers/audio_provider.dart';
+import 'package:audio_player/ui/views/settings/settings_screen.dart';
 import 'package:audio_player/ui/views/home/playback_section.dart';
+import 'package:audio_player/core/providers/audio_provider.dart';
 import 'package:audio_player/ui/views/files/files_screen.dart';
-import 'package:audio_player/ui/widgets/settings_screen.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';

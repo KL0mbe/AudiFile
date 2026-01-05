@@ -1,4 +1,5 @@
 import 'package:audio_player/core/helpers/ios_remote_intervals.dart';
+import 'package:audio_player/core/services/default_data_service.dart';
 import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 import 'package:audio_player/core/services/database_service.dart';
 import 'package:audio_player/core/models/file_data.dart';
@@ -20,9 +21,12 @@ class AudioProvider extends ChangeNotifier {
   List<FileData> _files = [];
   List<FileData> get files => _files;
 
+  late DefaultDataService defaultSettings;
+
   Future<void> init() async {
     await loadFiles();
     await loadCurrentFile();
+    await loadDefaultSettings();
   }
 
   Future<void> loadCurrentFile() async {
@@ -35,6 +39,10 @@ class AudioProvider extends ChangeNotifier {
   Future<void> loadFiles() async {
     _files = await dbService.getFiles();
     notifyListeners();
+  }
+
+  Future<void> loadDefaultSettings() async {
+    defaultSettings = await dbService.getDefaultSettings();
   }
 
   Future<void> setCurrentFile(FileData file) async {
@@ -86,6 +94,12 @@ class AudioProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateDefaultSettings(DefaultDataService newSettings) async {
+    defaultSettings = newSettings;
+    await dbService.setDefaultSettings(defaultSettings);
+    notifyListeners();
+  }
+
   Future<void> pickFiles() async {
     if (!await mediaDir.exists()) await mediaDir.create(recursive: true);
 
@@ -120,8 +134,17 @@ class AudioProvider extends ChangeNotifier {
         final bytes = data.buffer.asUint8List();
         File("${mediaDir.path}/$coverPath").writeAsBytes(bytes);
       }
-      // bool isSong = ["mp3", "m4a", "aac", "wav", "flac"].contains(extension(file.path));
-      await dbService.insertFile(basePath, metadata.trackName ?? "", jsonEncode(metadata.trackArtistNames), coverPath);
+      bool isSong = [".mp3", ".m4a", ".aac", ".wav", ".flac"].contains(extension(file.path));
+
+      await dbService.insertFile(
+        basePath,
+        metadata.trackName ?? "",
+        jsonEncode(metadata.trackArtistNames),
+        coverPath,
+        defaultSettings.fastForward,
+        defaultSettings.rewind,
+        defaultSettings.setIsSkip(isSong),
+      );
     }
     await loadFiles();
   }

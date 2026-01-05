@@ -101,6 +101,9 @@ class FileData {
       cover: cover ?? this.cover,
       fastForward: fastForward ?? this.fastForward,
       rewind: rewind ?? this.rewind,
+      lastPosition: lastPosition ?? this.lastPosition,
+      isSkip: isSkip ?? this.isSkip,
+      speed: speed ?? this.speed,
     );
   }
 

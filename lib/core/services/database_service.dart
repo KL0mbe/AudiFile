@@ -1,3 +1,4 @@
+import 'package:audio_player/core/services/default_data_service.dart';
 import 'package:audio_player/core/models/file_data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -23,14 +24,18 @@ class DatabaseService {
     _db = await openDatabase(dbPath, version: 1, onConfigure: _onConfigure, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
-  Future<void> insertFile(String path, String title, String author, String cover, {bool isSong = false}) async =>
-      await _db.execute("INSERT INTO files (path, title, author, cover, is_skip) VALUES(?, ?, ?, ?, ?)", [
-        path,
-        title,
-        author,
-        cover,
-        isSong,
-      ]);
+  Future<void> insertFile(
+    String path,
+    String title,
+    String author,
+    String cover,
+    int fastForward,
+    int rewind,
+    bool isSkip,
+  ) async => await _db.execute(
+    "INSERT INTO files (path, title, author, cover, fast_forward, rewind, is_skip) VALUES(?, ?, ?, ?, ?, ?, ?)",
+    [path, title, author, cover, fastForward, rewind, isSkip],
+  );
 
   Future<void> updateFile(
     String path,
@@ -63,8 +68,21 @@ class DatabaseService {
     return FileData.fromMap(result.first);
   }
 
+  Future<DefaultDataService> getDefaultSettings() async {
+    final result = await _db.rawQuery("SELECT * FROM default_settings WHERE id = 1");
+    return DefaultDataService.fromMap(result.first);
+  }
+
   Future<void> setCurrentFile(int id) async =>
-      _db.execute("INSERT OR REPLACE INTO current_file(id, file_id) VALUES(1, ?)", [id]);
+      await _db.execute("INSERT OR REPLACE INTO current_file(id, file_id) VALUES(1, ?)", [id]);
+
+  Future<void> setDefaultSettings(DefaultDataService defaultSettings) async {
+    await _db.execute("INSERT OR REPLACE INTO default_settings(id, fast_forward, rewind, is_skip) VALUES(1, ?, ?, ?)", [
+      defaultSettings.fastForward,
+      defaultSettings.rewind,
+      defaultSettings.isSkip.name,
+    ]);
+  }
 
   FutureOr<void> _onConfigure(Database db) async {
     await db.execute("PRAGMA foreign_keys = ON");
@@ -95,5 +113,16 @@ class DatabaseService {
       ON DELETE SET NULL
       ON UPDATE CASCADE
     )""");
+    await db.execute("""
+    CREATE TABLE default_settings (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    fast_forward INTEGER NOT NULL DEFAULT 15,
+    rewind INTEGER NOT NULL DEFAULT 15,
+    is_skip TEXT NOT NULL DEFAULT 'none' CHECK (is_skip IN ('all', 'song', 'none'))
+    )
+    """);
+    await db.execute("""
+    INSERT INTO default_settings (id, fast_forward, rewind, is_skip) VALUES(1, 15, 15, 'none')
+    """);
   }
 }
