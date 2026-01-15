@@ -8,7 +8,7 @@ class MyTextButton extends StatelessWidget {
   final Widget? icon;
   final Color? color;
   final Color? backgroundColor;
-  final double? fontSize;
+  final double fontSize;
   final FontWeight? fontWeight;
   final TextDecoration? textDecoration;
   final TextStyle? style;
@@ -20,7 +20,7 @@ class MyTextButton extends StatelessWidget {
     super.key,
     this.color,
     this.backgroundColor,
-    this.fontSize,
+    this.fontSize = 16,
     this.fontWeight,
     this.textDecoration,
     this.style,
@@ -43,7 +43,7 @@ class MyTextButton extends StatelessWidget {
         label: MyBodyText(
           text,
           fontWeight: fontWeight ?? FontWeight.w600,
-          fontSize: fontSize ?? 16.sp,
+          fontSize: fontSize.sp,
           color: color ?? Colors.black,
         ),
       ),

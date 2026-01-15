@@ -29,12 +29,14 @@ class DatabaseService {
     String title,
     String author,
     String cover,
+    String originalCover,
     int fastForward,
     int rewind,
     bool isSkip,
   ) async => await _db.execute(
-    "INSERT INTO files (path, title, author, cover, fast_forward, rewind, is_skip) VALUES(?, ?, ?, ?, ?, ?, ?)",
-    [path, title, author, cover, fastForward, rewind, isSkip],
+    """INSERT INTO files (path, title, original_title, author, original_author, cover, original_cover, 
+    fast_forward, rewind, is_skip) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+    [path, title, title, author, author, cover, originalCover, fastForward, rewind, isSkip],
   );
 
   Future<void> updateFile(
@@ -84,6 +86,10 @@ class DatabaseService {
     ]);
   }
 
+  Future<void> restoreDefaultSettings(int id) async {
+    await _db.execute("UPDATE files SET title = original_title, author = original_author WHERE id = ?", [id]);
+  }
+
   FutureOr<void> _onConfigure(Database db) async {
     await db.execute("PRAGMA foreign_keys = ON");
   }
@@ -96,8 +102,11 @@ class DatabaseService {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       path TEXT NOT NULL UNIQUE,
       title TEXT NOT NULL,
+      original_title TEXT NOT NULL,
       author TEXT NOT NULL,
-      cover TEXT NOT NULL UNIQUE,
+      original_author TEXT NOT NULL,
+      cover TEXT NOT NULL,
+      original_cover TEXT NOT NULL,
       fast_forward INTEGER DEFAULT 15,
       rewind INTEGER DEFAULT 15,
       last_position REAL DEFAULT 0,

@@ -33,6 +33,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     currentFileCopy = getIt<AudioProvider>().currentFile!.copy();
     // maybe change to readasbytes in initstateasync later
     tempBytes = File(currentFileCopy.coverPath).readAsBytesSync();
+    // breaks comparison supposedly but not in practice?
     originalBytes = tempBytes;
   }
 
@@ -58,6 +59,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.h),
             shrinkWrap: true,
             children: [
+              Align(
+                alignment: AlignmentGeometry.centerRight,
+                child: MyTextButton(
+                  "Restore Settings",
+                  fontSize: 12,
+                  onPressed: () async {
+                    // TODO: add alertdialog warning
+                    await audioProvider.restoreDefaultSettings(currentFileCopy.id);
+                    if (context.mounted) Navigator.pop(context);
+                  },
+                ),
+              ),
+              Gap(16.h),
               TextRow(
                 "Title: ",
                 errorLabel: "Please enter a title",

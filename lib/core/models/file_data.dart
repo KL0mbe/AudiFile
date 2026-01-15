@@ -11,6 +11,7 @@ class FileData {
     required this.title,
     required this.author,
     required this.cover,
+    required this.originalCover,
     required this.fastForward,
     required this.rewind,
     this.lastPosition = 0,
@@ -23,6 +24,7 @@ class FileData {
   String title;
   List<String> author;
   String cover;
+  String originalCover;
   int fastForward;
   int rewind;
   // probably not final either for audiobooks/podcasts
@@ -31,6 +33,7 @@ class FileData {
   double speed;
 
   String get coverPath => "${mediaDir.path}/$cover";
+  String get originalPath => "${mediaDir.path}/$originalCover";
 
   IconData get getFastForwardIcon {
     if (isSkip) {
@@ -87,6 +90,7 @@ class FileData {
     String? title,
     List<String>? author,
     String? cover,
+    String? originalCover,
     int? fastForward,
     int? rewind,
     double? lastPosition,
@@ -99,6 +103,7 @@ class FileData {
       title: title ?? this.title,
       author: author ?? this.author,
       cover: cover ?? this.cover,
+      originalCover: originalCover ?? this.originalCover,
       fastForward: fastForward ?? this.fastForward,
       rewind: rewind ?? this.rewind,
       lastPosition: lastPosition ?? this.lastPosition,
@@ -118,6 +123,7 @@ class FileData {
       author: List<String>.from((decoded != null && decoded is List && decoded.isNotEmpty) ? decoded : ["Unknown"]),
       // could get lib dir in here and set it right away
       cover: map["cover"] as String,
+      originalCover: map["original_cover"] as String,
       fastForward: map["fast_forward"] as int,
       rewind: map["rewind"] as int,
       lastPosition: map["last_position"] as double,
@@ -132,6 +138,7 @@ class FileData {
     "title": title,
     "author": jsonEncode(author),
     "cover": cover,
+    "original_cover": originalCover,
     "fast_forward": fastForward,
     "rewind": rewind,
     "last_position": lastPosition,

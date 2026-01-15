@@ -100,6 +100,15 @@ class AudioProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> restoreDefaultSettings(int id) async {
+    await dbService.restoreDefaultSettings(id);
+
+    final bytes = await File(_currentFile!.originalPath).readAsBytes();
+    await File(_currentFile!.coverPath).writeAsBytes(bytes);
+
+    await loadCurrentFile();
+  }
+
   Future<void> pickFiles() async {
     if (!await mediaDir.exists()) await mediaDir.create(recursive: true);
 
@@ -127,12 +136,15 @@ class AudioProvider extends ChangeNotifier {
       await file.copy(dest.path);
       final metadata = await MetadataRetriever.fromFile(dest);
       final coverPath = "${basenameWithoutExtension(dest.path)}_cover";
+      final originalPath = "${basenameWithoutExtension(dest.path)}_original_cover";
       if (metadata.albumArt != null) {
         await File("${mediaDir.path}/$coverPath").writeAsBytes(metadata.albumArt!);
+        await File("${mediaDir.path}/$originalPath").writeAsBytes(metadata.albumArt!);
       } else {
         final data = await rootBundle.load("assets/media/avatar.png");
         final bytes = data.buffer.asUint8List();
         File("${mediaDir.path}/$coverPath").writeAsBytes(bytes);
+        File("${mediaDir.path}/$originalPath").writeAsBytes(bytes);
       }
       bool isSong = [".mp3", ".m4a", ".aac", ".wav", ".flac"].contains(extension(file.path));
 
@@ -141,6 +153,7 @@ class AudioProvider extends ChangeNotifier {
         metadata.trackName ?? "",
         jsonEncode(metadata.trackArtistNames),
         coverPath,
+        originalPath,
         defaultSettings.fastForward,
         defaultSettings.rewind,
         defaultSettings.setIsSkip(isSong),
