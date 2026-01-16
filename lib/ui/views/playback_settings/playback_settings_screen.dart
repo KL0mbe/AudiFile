@@ -67,7 +67,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                     fontSize: 12,
                     onPressed: () async {
                       // TODO: add alertdialog warning
-                      await audioProvider.restoreDefaultSettings(currentFileCopy.id);
+                      await audioProvider.restoreDefaultSettings(currentFileCopy);
                       if (context.mounted) Navigator.pop(context);
                     },
                   ),

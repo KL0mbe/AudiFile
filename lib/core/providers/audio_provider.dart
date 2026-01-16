@@ -1,5 +1,5 @@
-import 'package:audio_player/core/helpers/ios_remote_intervals.dart';
 import 'package:audio_player/core/services/default_data_service.dart';
+import 'package:audio_player/core/helpers/ios_remote_intervals.dart';
 import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 import 'package:audio_player/core/services/database_service.dart';
 import 'package:audio_player/core/models/file_data.dart';
@@ -69,8 +69,8 @@ class AudioProvider extends ChangeNotifier {
       file.title,
       jsonEncode(file.author),
       file.cover,
-      file.fastForward.toString(),
-      file.rewind.toString(),
+      file.fastForward,
+      file.rewind,
       file.isSkip,
       true,
     );
@@ -101,13 +101,16 @@ class AudioProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> restoreDefaultSettings(int id) async {
-    await dbService.restoreDefaultSettings(id);
+  Future<void> restoreDefaultSettings(FileData file) async {
+    bool isSong = [".mp3", ".m4a", ".aac", ".wav", ".flac"].contains(extension(file.path).toLowerCase());
+    bool isSkip = defaultSettings.setIsSkip(isSong);
+    await dbService.restoreDefaultSettings(file.id, isSkip);
 
     final bytes = await File(_currentFile!.originalPath).readAsBytes();
     await File(_currentFile!.coverPath).writeAsBytes(bytes);
 
     await loadCurrentFile();
+    notifyListeners();
   }
 
   Future<void> pickFiles() async {
@@ -147,7 +150,7 @@ class AudioProvider extends ChangeNotifier {
         File("${mediaDir.path}/$coverPath").writeAsBytes(bytes);
         File("${mediaDir.path}/$originalPath").writeAsBytes(bytes);
       }
-      bool isSong = [".mp3", ".m4a", ".aac", ".wav", ".flac"].contains(extension(file.path));
+      bool isSong = [".mp3", ".m4a", ".aac", ".wav", ".flac"].contains(extension(file.path).toLowerCase());
 
       await dbService.insertFile(
         basePath,

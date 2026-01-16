@@ -44,8 +44,8 @@ class DatabaseService {
     String title,
     String author,
     String cover,
-    String fastForward,
-    String rewind,
+    int fastForward,
+    int rewind,
     bool iSSkip,
     bool isEdit,
   ) async {
@@ -87,10 +87,15 @@ class DatabaseService {
     ]);
   }
 
-  Future<void> restoreDefaultSettings(int id) async {
+  Future<void> restoreDefaultSettings(int id, bool isSkip) async {
     await _db.execute(
-      "UPDATE files SET title = original_title, author = original_author, is_edit = FALSE WHERE id = ?",
-      [id],
+      """
+    UPDATE files 
+    SET title = original_title, author = original_author, is_edit = FALSE, is_skip = ?, 
+    fast_forward = (SELECT fast_forward FROM default_settings WHERE id = 1), 
+    rewind = (SELECT rewind FROM default_settings WHERE id = 1) 
+    WHERE  id = ?""",
+      [isSkip, id],
     );
   }
 
