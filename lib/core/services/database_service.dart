@@ -47,10 +47,11 @@ class DatabaseService {
     String fastForward,
     String rewind,
     bool iSSkip,
+    bool isEdit,
   ) async {
     await _db.execute(
-      "UPDATE files SET title = ?, author = ?, cover = ?, fast_forward = ?, rewind = ?, is_skip = ? WHERE path = ?",
-      [title, author, cover, fastForward, rewind, iSSkip, path],
+      "UPDATE files SET title = ?, author = ?, cover = ?, fast_forward = ?, rewind = ?, is_skip = ?, is_edit = ? WHERE path = ?",
+      [title, author, cover, fastForward, rewind, iSSkip, isEdit, path],
     );
   }
 
@@ -87,7 +88,10 @@ class DatabaseService {
   }
 
   Future<void> restoreDefaultSettings(int id) async {
-    await _db.execute("UPDATE files SET title = original_title, author = original_author WHERE id = ?", [id]);
+    await _db.execute(
+      "UPDATE files SET title = original_title, author = original_author, is_edit = FALSE WHERE id = ?",
+      [id],
+    );
   }
 
   FutureOr<void> _onConfigure(Database db) async {
@@ -111,7 +115,8 @@ class DatabaseService {
       rewind INTEGER DEFAULT 15,
       last_position REAL DEFAULT 0,
       is_skip BOOLEAN DEFAULT FALSE,
-      speed REAL DEFAULT 1
+      speed REAL DEFAULT 1,
+      is_edit BOOLEAN DEFAULT FALSE
         )""");
     await db.execute("""
       CREATE TABLE current_file (

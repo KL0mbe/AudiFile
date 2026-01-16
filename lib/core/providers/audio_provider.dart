@@ -72,6 +72,7 @@ class AudioProvider extends ChangeNotifier {
       file.fastForward.toString(),
       file.rewind.toString(),
       file.isSkip,
+      true,
     );
     // refactor this as we use it in setcurrentfile too
     final mediaItem = MediaItem(
@@ -90,7 +91,7 @@ class AudioProvider extends ChangeNotifier {
       artworkBytes: artWorkBytes,
       isSkip: file.isSkip,
     );
-    _currentFile = file;
+    await loadCurrentFile();
     notifyListeners();
   }
 

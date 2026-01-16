@@ -59,18 +59,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.h),
             shrinkWrap: true,
             children: [
-              Align(
-                alignment: AlignmentGeometry.centerRight,
-                child: MyTextButton(
-                  "Restore Settings",
-                  fontSize: 12,
-                  onPressed: () async {
-                    // TODO: add alertdialog warning
-                    await audioProvider.restoreDefaultSettings(currentFileCopy.id);
-                    if (context.mounted) Navigator.pop(context);
-                  },
+              if (currentFileCopy.isEdit)
+                Align(
+                  alignment: AlignmentGeometry.centerRight,
+                  child: MyTextButton(
+                    "Restore Settings",
+                    fontSize: 12,
+                    onPressed: () async {
+                      // TODO: add alertdialog warning
+                      await audioProvider.restoreDefaultSettings(currentFileCopy.id);
+                      if (context.mounted) Navigator.pop(context);
+                    },
+                  ),
                 ),
-              ),
               Gap(16.h),
               TextRow(
                 "Title: ",

@@ -1,13 +1,11 @@
-import 'dart:async';
-
 import 'package:audio_player/core/providers/audio_provider.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
 import 'package:audio_player/core/app_init.dart';
 import 'package:just_audio/just_audio.dart';
 import 'database_service.dart';
+import 'dart:async';
 import 'dart:math';
-import 'dart:io';
 
 Future<AudioHandler> initAudioHandler() async {
   final dbService = getIt<DatabaseService>();

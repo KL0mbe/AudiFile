@@ -17,6 +17,7 @@ class FileData {
     this.lastPosition = 0,
     this.isSkip = false,
     this.speed = 1,
+    this.isEdit = false,
   });
 
   final int id;
@@ -31,6 +32,7 @@ class FileData {
   final double lastPosition;
   bool isSkip;
   double speed;
+  bool isEdit;
 
   String get coverPath => "${mediaDir.path}/$cover";
   String get originalPath => "${mediaDir.path}/$originalCover";
@@ -96,6 +98,7 @@ class FileData {
     double? lastPosition,
     bool? isSkip,
     double? speed,
+    bool? isEdit,
   }) {
     return FileData(
       id: id,
@@ -109,6 +112,7 @@ class FileData {
       lastPosition: lastPosition ?? this.lastPosition,
       isSkip: isSkip ?? this.isSkip,
       speed: speed ?? this.speed,
+      isEdit: isEdit ?? this.isEdit,
     );
   }
 
@@ -129,6 +133,7 @@ class FileData {
       lastPosition: map["last_position"] as double,
       isSkip: (map["is_skip"] as int) == 1,
       speed: map["speed"] as double,
+      isEdit: (map["is_edit"] as int) == 1,
     );
   }
 
@@ -144,5 +149,6 @@ class FileData {
     "last_position": lastPosition,
     "is_skip": isSkip == true ? 1 : 0,
     "speed": speed,
+    "is_edit": isEdit == true ? 1 : 0,
   };
 }
