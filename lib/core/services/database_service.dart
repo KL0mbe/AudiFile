@@ -91,11 +91,38 @@ class DatabaseService {
     await _db.execute(
       """
     UPDATE files 
-    SET title = original_title, author = original_author, is_edit = FALSE, is_skip = ?, 
+    SET title = original_title, author = original_author, is_edit = 0, is_skip = ?, 
     fast_forward = (SELECT fast_forward FROM default_settings WHERE id = 1), 
     rewind = (SELECT rewind FROM default_settings WHERE id = 1) 
     WHERE  id = ?""",
       [isSkip, id],
+    );
+  }
+
+  Future<void> overrideCustomSettings(String isSkip, int rewind, int fastForward, bool overrideAll) async {
+    await _db.execute(
+      """
+    UPDATE files
+    SET rewind = ?, fast_forward = ?, is_edit = 1,
+    is_skip = 
+    CASE ? 
+      WHEN 'all' THEN 1 
+      WHEN 'none' THEN 0
+      WHEN 'song' THEN
+      CASE
+        WHEN lower(path) LIKE '%.mp3'
+          OR lower(path) LIKE '%.m4a'
+          OR lower(path) LIKE '%.aac'
+          OR lower(path) LIKE '%.wav'
+          OR lower(path) LIKE '%.flac'
+        THEN 1
+        ELSE 0
+      END
+      ELSE 0
+    END
+    WHERE (? = 1) OR (is_edit = 0)
+    """,
+      [rewind, fastForward, isSkip, overrideAll],
     );
   }
 
@@ -119,9 +146,9 @@ class DatabaseService {
       fast_forward INTEGER DEFAULT 15,
       rewind INTEGER DEFAULT 15,
       last_position REAL DEFAULT 0,
-      is_skip BOOLEAN DEFAULT FALSE,
+      is_skip BOOLEAN DEFAULT 0,
       speed REAL DEFAULT 1,
-      is_edit BOOLEAN DEFAULT FALSE
+      is_edit BOOLEAN DEFAULT 0
         )""");
     await db.execute("""
       CREATE TABLE current_file (

@@ -113,6 +113,16 @@ class AudioProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> overrideCustomSettings(IsSkip isSkip, int rewind, int fastForward, bool overrideAll) async {
+    await dbService.overrideCustomSettings(isSkip.name, rewind, fastForward, overrideAll);
+    await loadFiles();
+    // maybe doesnt restart ui if you getcurrentfile instead of load?
+    // holy shit i dont think it does try this with updating regular settings
+    _currentFile = await dbService.getCurrentFile();
+    // await loadCurrentFile();
+    notifyListeners();
+  }
+
   Future<void> pickFiles() async {
     if (!await mediaDir.exists()) await mediaDir.create(recursive: true);
 
