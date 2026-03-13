@@ -3,6 +3,7 @@ import 'package:audio_player/core/helpers/ios_remote_intervals.dart';
 import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 import 'package:audio_player/core/services/database_service.dart';
 import 'package:audio_player/core/models/file_data.dart';
+import 'package:audio_player/core/models/playlist.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_player/core/app_init.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +13,7 @@ import 'package:path/path.dart';
 import 'dart:convert';
 import 'dart:io';
 
+/// split into file provider, playlist provider etc
 class AudioProvider extends ChangeNotifier {
   final dbService = getIt<DatabaseService>();
 
@@ -21,10 +23,15 @@ class AudioProvider extends ChangeNotifier {
   List<FileData> _files = [];
   List<FileData> get files => _files;
 
+  List<Playlist> _playlists = [];
+  List<Playlist> get playlists => _playlists;
+
   late DefaultDataService defaultSettings;
 
   Future<void> init() async {
     await loadFiles();
+    await loadPlaylists();
+    await loadPlaylistSongs();
     await loadCurrentFile();
     await loadDefaultSettings();
   }
@@ -39,6 +46,21 @@ class AudioProvider extends ChangeNotifier {
   Future<void> loadFiles() async {
     _files = await dbService.getFiles();
     notifyListeners();
+  }
+
+  Future<void> loadPlaylists() async {
+    _playlists = await dbService.getPlaylists();
+    notifyListeners();
+  }
+
+  Future<void> loadPlaylistSongs() async {
+    final result = await dbService.getPlaylistSongs();
+    for (Map<String, dynamic> entry in result) {
+      _playlists
+          .firstWhere((playlist) => playlist.id == entry["playlist_id"])
+          .songs
+          .add(_files.firstWhere((file) => file.id == entry["song_id"]));
+    }
   }
 
   Future<void> loadDefaultSettings() async {
@@ -92,6 +114,15 @@ class AudioProvider extends ChangeNotifier {
       isSkip: file.isSkip,
     );
     await loadCurrentFile();
+    notifyListeners();
+  }
+
+  Future<void> createPlaylist(String title) async {
+    final coverPath = "${title}_playlist_cover";
+    final data = await rootBundle.load("assets/media/avatar.png");
+    final bytes = data.buffer.asUint8List();
+    File("${mediaDir.path}/$coverPath").writeAsBytes(bytes);
+    await dbService.insertPlaylist(title, coverPath, false);
     notifyListeners();
   }
 

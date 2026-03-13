@@ -53,9 +53,9 @@ class MyTextField extends StatelessWidget {
           textInputAction: TextInputAction.done,
           textCapitalization: TextCapitalization.words,
           scrollPhysics: const NeverScrollableScrollPhysics(),
-          textAlign: isExpand ? TextAlign.start : TextAlign.center,
           style: TextStyle(fontSize: fontSize.sp, color: Colors.black, fontWeight: fontWeight),
           decoration: InputDecoration(
+            hintText: hintText,
             errorBorder: border,
             enabledBorder: border,
             focusedBorder: focusedBorder,

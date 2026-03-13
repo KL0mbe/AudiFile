@@ -38,7 +38,10 @@ class _FilesScreenState extends State<FilesScreen> {
               separatorBuilder: (_, index) => Gap(12.h),
               shrinkWrap: true,
               itemCount: audioProvider.files.length,
-              itemBuilder: (context, index) => FileCard(file: audioProvider.files[index]),
+              itemBuilder: (context, index) => FileCard(
+                file: audioProvider.files[index],
+                onTap: () async => await context.read<AudioProvider>().setCurrentFile(audioProvider.files[index]),
+              ),
             ),
           ],
         ),

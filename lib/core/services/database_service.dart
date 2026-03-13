@@ -1,3 +1,4 @@
+import 'package:audio_player/core/models/playlist.dart';
 import 'package:audio_player/core/services/default_data_service.dart';
 import 'package:audio_player/core/models/file_data.dart';
 import 'package:path_provider/path_provider.dart';
@@ -24,6 +25,7 @@ class DatabaseService {
     _db = await openDatabase(dbPath, version: 1, onConfigure: _onConfigure, onCreate: _onCreate, onUpgrade: _onUpgrade);
   }
 
+  ///Files
   Future<void> insertFile(
     String path,
     String title,
@@ -71,13 +73,30 @@ class DatabaseService {
     return FileData.fromMap(result.first);
   }
 
+  Future<void> setCurrentFile(int id) async =>
+      await _db.execute("INSERT OR REPLACE INTO current_file(id, file_id) VALUES(1, ?)", [id]);
+
+  /// Playlist
+  Future<void> insertPlaylist(String title, String cover, bool isShuffle) async => await _db.execute(
+    "INSERT OR REPLACE INTO playlists(title, cover, isShuffle) VALUES(?, ?, ?)",
+    [title, cover, isShuffle],
+  );
+
+  Future<List<Playlist>> getPlaylists() async {
+    final result = await _db.rawQuery("SELECT * FROM playlists");
+    return result.map((row) => Playlist.fromMap(row)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getPlaylistSongs() async {
+    final result = await _db.rawQuery("SELECT * FROM playlist_songs ps ORDER BY ps.playlist_id, ps.position");
+    return result;
+  }
+
+  /// Settings
   Future<DefaultDataService> getDefaultSettings() async {
     final result = await _db.rawQuery("SELECT * FROM default_settings WHERE id = 1");
     return DefaultDataService.fromMap(result.first);
   }
-
-  Future<void> setCurrentFile(int id) async =>
-      await _db.execute("INSERT OR REPLACE INTO current_file(id, file_id) VALUES(1, ?)", [id]);
 
   Future<void> setDefaultSettings(DefaultDataService defaultSettings) async {
     await _db.execute("INSERT OR REPLACE INTO default_settings(id, fast_forward, rewind, is_skip) VALUES(1, ?, ?, ?)", [
@@ -158,6 +177,28 @@ class DatabaseService {
       REFERENCES files(id)
       ON DELETE SET NULL
       ON UPDATE CASCADE
+    )""");
+    await db.execute(""" 
+    CREATE TABLE playlists (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL UNIQUE,
+    cover TEXT NOT NULL,
+    isShuffle INTEGER NOT NULL
+    )""");
+    await db.execute("""
+    CREATE TABLE playlist_songs(
+    playlist_id INTEGER NOT NULL,
+    song_id INTEGER NOT NULL,
+    position INTEGER NOT NULL, -- Switch to DateTime so we have when it was added along with the position
+    
+    PRIMARY KEY (playlist_id, song_id),
+    
+    FOREIGN KEY (playlist_id) REFERENCES playlists(id) ON DELETE CASCADE,
+    FOREIGN KEY (song_id) REFERENCES files(id) ON DELETE CASCADE
+    )""");
+    await db.execute("""
+    CREATE INDEX songs_in_playlist
+    ON playlist_songs(playlist_id, position
     )""");
     await db.execute("""
     CREATE TABLE default_settings (

@@ -1,6 +1,7 @@
 import 'package:audio_player/ui/views/playback_settings/playback_settings_screen.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
+import 'package:audio_player/ui/views/playlists/playlists_screen.dart';
 import 'package:audio_player/ui/views/settings/settings_screen.dart';
 import 'package:audio_player/ui/views/home/playback_section.dart';
 import 'package:audio_player/core/providers/audio_provider.dart';
@@ -28,6 +29,11 @@ class HomeScreen extends StatelessWidget {
             MyTextButton(
               "Files",
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => FilesScreen())),
+            ),
+            Gap(12.h),
+            MyTextButton(
+              "Playlists",
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => PlaylistsScreen())),
             ),
             Gap(12.h),
             MyTextButton(
