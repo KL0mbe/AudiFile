@@ -82,6 +82,14 @@ class DatabaseService {
     [title, cover, isShuffle],
   );
 
+  Future<void> insertPlaylistSong(int playlistId, int songId, int position) async => await _db.execute(
+    "INSERT OR REPLACE INTO playlist_songs(playlist_id, song_id, position) VALUES(?, ?, ?)",
+    [playlistId, songId, position],
+  );
+
+  Future<void> removePlaylistSong(int playlistId, int songId) async =>
+      await _db.rawQuery("DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?", [playlistId, songId]);
+
   Future<List<Playlist>> getPlaylists() async {
     final result = await _db.rawQuery("SELECT * FROM playlists");
     return result.map((row) => Playlist.fromMap(row)).toList();

@@ -36,6 +36,7 @@ class AudioProvider extends ChangeNotifier {
     await loadDefaultSettings();
   }
 
+  /// Load Database Data
   Future<void> loadCurrentFile() async {
     _currentFile = await dbService.getCurrentFile();
     if (_currentFile != null) {
@@ -61,12 +62,14 @@ class AudioProvider extends ChangeNotifier {
           .songs
           .add(_files.firstWhere((file) => file.id == entry["song_id"]));
     }
+    notifyListeners();
   }
 
   Future<void> loadDefaultSettings() async {
     defaultSettings = await dbService.getDefaultSettings();
   }
 
+  /// Current File
   Future<void> setCurrentFile(FileData file) async {
     // passing file might be stale (somehow) so use id and get the file
     await dbService.setCurrentFile(file.id);
@@ -117,15 +120,31 @@ class AudioProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Playlist
   Future<void> createPlaylist(String title) async {
     final coverPath = "${title}_playlist_cover";
     final data = await rootBundle.load("assets/media/avatar.png");
     final bytes = data.buffer.asUint8List();
     File("${mediaDir.path}/$coverPath").writeAsBytes(bytes);
     await dbService.insertPlaylist(title, coverPath, false);
+    loadPlaylists();
+    loadPlaylistSongs();
+  }
+
+  Future<void> addSongToPlaylist(Playlist playlist, song) async {
+    // Switch to Milliseconds since epoch
+    await dbService.insertPlaylistSong(playlist.id, song.id, playlist.songs.length);
+    playlist.songs.add(song);
     notifyListeners();
   }
 
+  Future<void> removeSongFromPlaylist(Playlist playlist, song) async {
+    await dbService.removePlaylistSong(playlist.id, song.id);
+    playlist.songs.remove(song);
+    notifyListeners();
+  }
+
+  /// Default Settings
   Future<void> updateDefaultSettings(DefaultDataService newSettings) async {
     defaultSettings = newSettings;
     await dbService.setDefaultSettings(defaultSettings);

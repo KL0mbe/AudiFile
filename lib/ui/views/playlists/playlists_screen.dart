@@ -68,6 +68,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                                 onPressed: () async {
                                   if (!_formkey.currentState!.validate()) return;
                                   context.read<AudioProvider>().createPlaylist(_controller.text.trim());
+                                  _controller.clear();
                                   if (context.mounted) Navigator.pop(context);
                                 },
                               ),
@@ -79,14 +80,15 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                   );
                 },
               ),
-              // onPressed: () async => await context.read<AudioProvider>().pickFiles(),
             ),
             Gap(16.h),
-            ListView.separated(
-              separatorBuilder: (_, index) => Gap(12.h),
-              shrinkWrap: true,
-              itemCount: context.watch<AudioProvider>().playlists.length, //PlaceHolder
-              itemBuilder: (context, index) => PlaylistCard(context.read<AudioProvider>().playlists[index]),
+            Expanded(
+              child: ListView.separated(
+                separatorBuilder: (_, index) => Gap(12.h),
+                shrinkWrap: true,
+                itemCount: context.watch<AudioProvider>().playlists.length, //PlaceHolder
+                itemBuilder: (context, index) => PlaylistCard(context.read<AudioProvider>().playlists[index]),
+              ),
             ),
           ],
         ),

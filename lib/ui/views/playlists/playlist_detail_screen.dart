@@ -1,3 +1,4 @@
+import 'package:audio_player/ui/views/playlists/playlist_song_selector_screen.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_app_bar.dart';
 import 'package:audio_player/ui/views/files/widgets/file_card.dart';
@@ -14,7 +15,7 @@ class PlaylistDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final audioProvider = context.read<AudioProvider>();
+    final audioProvider = context.watch<AudioProvider>();
     return Scaffold(
       appBar: MyAppBar(title: playlist.title, onBackClick: () => Navigator.pop(context)),
       body: Column(
@@ -22,10 +23,12 @@ class PlaylistDetailScreen extends StatelessWidget {
           MyTextButton(
             "Add Song To ${playlist.title}",
             backgroundColor: Colors.grey,
-            onPressed: () {
-              //   open a list of files where the filecards ontap calls a new function that adds it to the playlist
-            },
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => PlaylistSongSelectorScreen(playlist: playlist)),
+            ),
           ),
+
           ListView.separated(
             separatorBuilder: (_, index) => Gap(12.h),
             shrinkWrap: true,
@@ -33,7 +36,7 @@ class PlaylistDetailScreen extends StatelessWidget {
             itemBuilder: (context, index) => FileCard(
               file: playlist.songs[index],
               // create new method for this ontap that sets the whole playlist to play not just the file
-              onTap: () => context.read<AudioProvider>().setCurrentFile(playlist.songs[index]),
+              onTap: () => audioProvider.setCurrentFile(playlist.songs[index]),
             ),
           ),
         ],
