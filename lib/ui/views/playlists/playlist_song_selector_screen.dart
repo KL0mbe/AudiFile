@@ -20,7 +20,6 @@ class PlaylistSongSelectorScreen extends StatefulWidget {
 class _PlaylistSongSelectorScreenState extends State<PlaylistSongSelectorScreen> {
   void onTapSelectedSong(FileData file) {
     if (widget.playlist.songs.contains(file)) {
-      // change to remove songs by swiping them in the playlist
       // and remove them from in here if they are in playlist
       context.read<AudioProvider>().removeSongFromPlaylist(widget.playlist, file);
     } else {
@@ -49,9 +48,11 @@ class _PlaylistSongSelectorScreenState extends State<PlaylistSongSelectorScreen>
                           ? CupertinoIcons.checkmark_alt_circle_fill
                           : CupertinoIcons.checkmark_alt_circle,
                     ),
-                    FileCard(
-                      file: audioProvider.files[index],
-                      onTap: () => setState(() => onTapSelectedSong(audioProvider.files[index])),
+                    Expanded(
+                      child: FileCard(
+                        file: audioProvider.files[index],
+                        onTap: () => setState(() => onTapSelectedSong(audioProvider.files[index])),
+                      ),
                     ),
                   ],
                 );

@@ -131,6 +131,12 @@ class AudioProvider extends ChangeNotifier {
     loadPlaylistSongs();
   }
 
+  Future<void> deletePlaylist(Playlist playlist) async {
+    dbService.removePlaylist(playlist.id);
+    loadPlaylists();
+    loadPlaylistSongs();
+  }
+
   Future<void> addSongToPlaylist(Playlist playlist, song) async {
     // Switch to Milliseconds since epoch
     await dbService.insertPlaylistSong(playlist.id, song.id, playlist.songs.length);

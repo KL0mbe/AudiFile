@@ -22,6 +22,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final audioProvider = context.watch<AudioProvider>();
     return Scaffold(
       appBar: MyAppBar(title: "Playlists", onBackClick: () => Navigator.pop(context)),
       body: SafeArea(
@@ -53,7 +54,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                                   if (newValue == null || newValue.isEmpty) {
                                     return "Enter a name for your playlist";
                                   }
-                                  if (context.read<AudioProvider>().playlists.any(
+                                  if (audioProvider.playlists.any(
                                     (playlist) => playlist.title.toLowerCase() == newValue.toLowerCase(),
                                   )) {
                                     "$newValue playlist already exists";
@@ -67,7 +68,7 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
                                 "Create",
                                 onPressed: () async {
                                   if (!_formkey.currentState!.validate()) return;
-                                  context.read<AudioProvider>().createPlaylist(_controller.text.trim());
+                                  audioProvider.createPlaylist(_controller.text.trim());
                                   _controller.clear();
                                   if (context.mounted) Navigator.pop(context);
                                 },
@@ -86,8 +87,8 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
               child: ListView.separated(
                 separatorBuilder: (_, index) => Gap(12.h),
                 shrinkWrap: true,
-                itemCount: context.watch<AudioProvider>().playlists.length, //PlaceHolder
-                itemBuilder: (context, index) => PlaylistCard(context.read<AudioProvider>().playlists[index]),
+                itemCount: audioProvider.playlists.length,
+                itemBuilder: (context, index) => PlaylistCard(audioProvider.playlists[index]),
               ),
             ),
           ],
