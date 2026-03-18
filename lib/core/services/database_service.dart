@@ -67,14 +67,43 @@ class DatabaseService {
     return result.map((row) => FileData.fromMap(row)).toList();
   }
 
+  /// Queue
+  Future<Map<String, dynamic>?> getCurrentQueue() async {
+    final result = await _db.rawQuery("SELECT * FROM current_queue");
+    if (result.isEmpty) return null;
+    return result.first;
+  }
+
   Future<FileData?> getCurrentFile() async {
-    final result = await _db.rawQuery('SELECT f.* FROM files f JOIN current_file c ON f.id = c.file_id WHERE c.id = 1');
+    final result = await _db.rawQuery("""
+      SELECT f.* 
+      FROM current_queue AS cq 
+      JOIN queue_items AS qi 
+      ON cq.id = qi.queue_id 
+      AND cq.current_index = qi.position 
+      JOIN files as f 
+      ON f.id = qi.song_id 
+      LIMIT 1""");
     if (result.isEmpty) return null;
     return FileData.fromMap(result.first);
   }
 
-  Future<void> setCurrentFile(int id) async =>
-      await _db.execute("INSERT OR REPLACE INTO current_file(id, file_id) VALUES(1, ?)", [id]);
+  Future<List<Map<String, dynamic>>> getQueueItems() async {
+    final result = await _db.rawQuery("SELECT * FROM queue_items WHERE queue_id = 1 ORDER BY position");
+    return result;
+  }
+
+  Future<void> insertQueueItem(int songId, position) async => await _db.execute(
+    "INSERT OR REPLACE INTO queue_items(queue_id, song_id, position) VALUES(1, ?, ?)",
+    [songId, position],
+  );
+
+  Future<void> clearQueueItems() async => await _db.execute("DELETE FROM queue_items WHERE queue_id = 1");
+
+  // resets last_position as we click a new index so a new file
+  // but for podcasts this cant apply so probably need isSong/isPodcast check
+  Future<void> updateCurrentIndex(int index) async =>
+      await _db.execute("UPDATE current_queue SET current_index = ?, last_position = 0", [index]);
 
   /// Playlist
   Future<void> insertPlaylist(String title, String cover, bool isShuffle) async => await _db.execute(
@@ -82,7 +111,7 @@ class DatabaseService {
     [title, cover, isShuffle],
   );
 
-  Future<void> removePlaylist(int id) async => await _db.rawQuery("DELETE FROM playlists WHERE id = ?", [id]);
+  Future<void> removePlaylist(int id) async => await _db.execute("DELETE FROM playlists WHERE id = ?", [id]);
 
   Future<void> insertPlaylistSong(int playlistId, int songId, int position) async => await _db.execute(
     "INSERT OR REPLACE INTO playlist_songs(playlist_id, song_id, position) VALUES(?, ?, ?)",
@@ -90,7 +119,7 @@ class DatabaseService {
   );
 
   Future<void> removePlaylistSong(int playlistId, int songId) async =>
-      await _db.rawQuery("DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?", [playlistId, songId]);
+      await _db.execute("DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ?", [playlistId, songId]);
 
   Future<List<Playlist>> getPlaylists() async {
     final result = await _db.rawQuery("SELECT * FROM playlists");
@@ -180,13 +209,21 @@ class DatabaseService {
       is_edit BOOLEAN DEFAULT 0
         )""");
     await db.execute("""
-      CREATE TABLE current_file (
+      CREATE TABLE current_queue (
       id INTEGER PRIMARY KEY CHECK (id = 1),
-      file_id INTEGER,
-      FOREIGN KEY (file_id)
-      REFERENCES files(id)
-      ON DELETE SET NULL
-      ON UPDATE CASCADE
+      current_index INTEGER NOT NULL,
+      last_position INTEGER NOT NULL DEFAULT 0
+    )""");
+    await db.execute("INSERT INTO current_queue(current_index, last_position) VALUES(0, 0)");
+    await db.execute("""
+    CREATE TABLE queue_items (
+    queue_id INTEGER NOT NULL,
+    song_id INTEGER NOT NULL,
+    position INTEGER NOT NULL,
+    
+    PRIMARY KEY (queue_id, position),
+    FOREIGN KEY (queue_id) REFERENCES current_queue(id) ON DELETE CASCADE,
+    FOREIGN KEY (song_id) REFERENCES files(id) ON DELETE CASCADE
     )""");
     await db.execute(""" 
     CREATE TABLE playlists (

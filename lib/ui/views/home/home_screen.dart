@@ -61,6 +61,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     Gap(32.h),
                     MyBodyText.semiBold(audioProvider.currentFile!.title),
+                    MyBodyText(audioProvider.currentFile!.author.first),
                     Gap(24.h),
                     SizedBox(
                       width: 300.h,

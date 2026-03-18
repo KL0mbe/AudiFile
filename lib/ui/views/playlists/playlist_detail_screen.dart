@@ -100,8 +100,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   width: double.infinity,
                   child: FileCard(
                     file: widget.playlist.songs[index],
-                    // create new method for this ontap that sets the whole playlist to play not just the file
-                    onTap: () => audioProvider.setCurrentFile(widget.playlist.songs[index]),
+                    onTap: () async => await audioProvider.setQueue(widget.playlist.songs, index),
                   ),
                 ),
               );

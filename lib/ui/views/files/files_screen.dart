@@ -40,7 +40,7 @@ class _FilesScreenState extends State<FilesScreen> {
               itemCount: audioProvider.files.length,
               itemBuilder: (context, index) => FileCard(
                 file: audioProvider.files[index],
-                onTap: () async => await context.read<AudioProvider>().setCurrentFile(audioProvider.files[index]),
+                onTap: () async => await context.read<AudioProvider>().setQueue(audioProvider.files, index),
               ),
             ),
           ],

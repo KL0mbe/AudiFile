@@ -1,4 +1,5 @@
 import 'package:audio_player/ui/views/playback_settings/widgets/skip_row.dart';
+import 'package:audio_player/ui/widgets/app_defaults/confirmation_dialog.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
 import 'package:audio_player/core/services/default_data_service.dart';
@@ -86,8 +87,18 @@ class _DefaultSettingsScreenState extends State<DefaultSettingsScreen> {
                     child: MyTextButton(
                       "Save",
                       onPressed: () async {
-                        await audioProvider.updateDefaultSettings(defaultSettingsCopy);
-                        if (context.mounted) Navigator.pop(context);
+                        final bool? result = await showDialog(
+                          context: context,
+                          builder: (context) => ConfirmationDialog(
+                            title: "Are You Sure You Want To Change Default Settings",
+                            description: "All newly imported Files will have these Settings",
+                            titleFontSize: 20,
+                          ),
+                        );
+                        if (result == true) {
+                          await audioProvider.updateDefaultSettings(defaultSettingsCopy);
+                          if (context.mounted) Navigator.pop(context);
+                        }
                       },
                     ),
                   ),

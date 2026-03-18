@@ -2,11 +2,13 @@ import 'package:audio_player/core/services/default_data_service.dart';
 import 'package:audio_player/core/helpers/ios_remote_intervals.dart';
 import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 import 'package:audio_player/core/services/database_service.dart';
+import 'package:audio_player/core/services/audio_handler.dart';
 import 'package:audio_player/core/models/file_data.dart';
 import 'package:audio_player/core/models/playlist.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_player/core/app_init.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:path/path.dart';
@@ -17,14 +19,18 @@ import 'dart:io';
 class AudioProvider extends ChangeNotifier {
   final dbService = getIt<DatabaseService>();
 
-  FileData? _currentFile;
-  FileData? get currentFile => _currentFile;
-
   List<FileData> _files = [];
   List<FileData> get files => _files;
 
   List<Playlist> _playlists = [];
   List<Playlist> get playlists => _playlists;
+
+  int lastPosition = 0;
+  int currentIndex = 0;
+
+  List<FileData> _queue = [];
+  List<FileData> get queue => _queue;
+  FileData? get currentFile => queue.isEmpty ? null : queue[currentIndex];
 
   late DefaultDataService defaultSettings;
 
@@ -32,16 +38,40 @@ class AudioProvider extends ChangeNotifier {
     await loadFiles();
     await loadPlaylists();
     await loadPlaylistSongs();
-    await loadCurrentFile();
+    await loadCurrentQueue();
+    await loadInitialQueue();
     await loadDefaultSettings();
   }
 
   /// Load Database Data
-  Future<void> loadCurrentFile() async {
-    _currentFile = await dbService.getCurrentFile();
-    if (_currentFile != null) {
-      await setCurrentFile(_currentFile!);
+  Future<void> loadCurrentQueue() async {
+    _queue = [];
+    final result = await dbService.getCurrentQueue();
+    if (result == null) return;
+
+    currentIndex = result["current_index"];
+    lastPosition = result["last_position"];
+
+    final items = await dbService.getQueueItems();
+    if (items.isEmpty) return;
+
+    if (_files.isEmpty) return;
+    for (Map<String, dynamic> song in items) {
+      _queue.add(_files.firstWhere((file) => file.id == song["song_id"]));
     }
+    notifyListeners();
+  }
+
+  // rename queue load method names
+  Future<void> loadInitialQueue() async {
+    if (_queue.isEmpty) return;
+    final audioSourcePlaylist = createAudioSourcePlaylist();
+    await (getIt<AudioHandler>() as MyAudioHandler).loadQueue(
+      audioSourcePlaylist,
+      currentIndex,
+      Duration(milliseconds: lastPosition),
+    );
+    notifyListeners();
   }
 
   Future<void> loadFiles() async {
@@ -55,6 +85,7 @@ class AudioProvider extends ChangeNotifier {
   }
 
   Future<void> loadPlaylistSongs() async {
+    playlists.forEach((playlist) => playlist.songs = []);
     final result = await dbService.getPlaylistSongs();
     for (Map<String, dynamic> entry in result) {
       _playlists
@@ -70,19 +101,46 @@ class AudioProvider extends ChangeNotifier {
   }
 
   /// Current File
-  Future<void> setCurrentFile(FileData file) async {
-    // passing file might be stale (somehow) so use id and get the file
-    await dbService.setCurrentFile(file.id);
-    final mediaItem = MediaItem(
-      id: file.id.toString(),
-      title: file.title,
-      artist: file.author.first,
-      artUri: Uri.file("${mediaDir.path}/${file.cover}"),
-      extras: {'path': file.path},
-    );
-    await getIt<AudioHandler>().playMediaItem(mediaItem);
-    _currentFile = file;
+  Future<void> updateCurrentIndex(int index) async {
+    currentIndex = index;
+    await dbService.updateCurrentIndex(index);
     notifyListeners();
+  }
+
+  Future<void> setQueue(List<FileData> playlist, int index) async {
+    await dbService.clearQueueItems();
+    await dbService.updateCurrentIndex(index);
+
+    int queuePosition = 0;
+    for (FileData song in playlist) {
+      await dbService.insertQueueItem(song.id, queuePosition);
+      queuePosition++;
+    }
+    await loadCurrentQueue();
+    final audioSourcePlaylist = createAudioSourcePlaylist();
+    await (getIt<AudioHandler>() as MyAudioHandler).loadQueue(
+      audioSourcePlaylist,
+      currentIndex,
+      Duration(milliseconds: lastPosition),
+    );
+  }
+
+  List<AudioSource> createAudioSourcePlaylist() {
+    List<AudioSource> audioSourcePlaylist = [];
+    for (FileData file in _queue) {
+      audioSourcePlaylist.add(
+        AudioSource.file(
+          "${mediaDir.path}/${file.path}",
+          tag: MediaItem(
+            id: file.id.toString(),
+            title: file.title,
+            artist: file.author.first,
+            artUri: Uri.file("${mediaDir.path}/${file.cover}"),
+          ),
+        ),
+      );
+    }
+    return audioSourcePlaylist;
   }
 
   Future<void> updateCurrentFile(FileData file, Uint8List artWorkBytes) async {
@@ -99,7 +157,7 @@ class AudioProvider extends ChangeNotifier {
       file.isSkip,
       true,
     );
-    // refactor this as we use it in setcurrentfile too
+    // check if this is correct still with extras?
     final mediaItem = MediaItem(
       id: file.id.toString(),
       title: file.title,
@@ -116,7 +174,8 @@ class AudioProvider extends ChangeNotifier {
       artworkBytes: artWorkBytes,
       isSkip: file.isSkip,
     );
-    await loadCurrentFile();
+    await loadFiles();
+    await loadCurrentQueue();
     notifyListeners();
   }
 
@@ -127,14 +186,14 @@ class AudioProvider extends ChangeNotifier {
     final bytes = data.buffer.asUint8List();
     File("${mediaDir.path}/$coverPath").writeAsBytes(bytes);
     await dbService.insertPlaylist(title, coverPath, false);
-    loadPlaylists();
-    loadPlaylistSongs();
+    await loadPlaylists();
+    await loadPlaylistSongs();
   }
 
   Future<void> deletePlaylist(Playlist playlist) async {
     dbService.removePlaylist(playlist.id);
-    loadPlaylists();
-    loadPlaylistSongs();
+    await loadPlaylists();
+    await loadPlaylistSongs();
   }
 
   Future<void> addSongToPlaylist(Playlist playlist, song) async {
@@ -162,10 +221,11 @@ class AudioProvider extends ChangeNotifier {
     bool isSkip = defaultSettings.setIsSkip(isSong);
     await dbService.restoreDefaultSettings(file.id, isSkip);
 
-    final bytes = await File(_currentFile!.originalPath).readAsBytes();
-    await File(_currentFile!.coverPath).writeAsBytes(bytes);
+    final bytes = await File(currentFile!.originalPath).readAsBytes();
+    await File(currentFile!.coverPath).writeAsBytes(bytes);
 
-    await loadCurrentFile();
+    await loadFiles();
+    await loadCurrentQueue();
     notifyListeners();
   }
 
@@ -174,9 +234,8 @@ class AudioProvider extends ChangeNotifier {
     await loadFiles();
     // maybe doesnt restart ui if you getcurrentfile instead of load?
     // holy shit i dont think it does try this with updating regular settings
-    _currentFile = await dbService.getCurrentFile();
-    // await loadCurrentFile();
-    notifyListeners();
+    // _currentFile = await dbService.getCurrentIndex();
+    await loadCurrentQueue();
   }
 
   Future<void> pickFiles() async {

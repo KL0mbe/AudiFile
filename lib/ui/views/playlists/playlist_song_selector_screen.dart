@@ -21,6 +21,8 @@ class _PlaylistSongSelectorScreenState extends State<PlaylistSongSelectorScreen>
   void onTapSelectedSong(FileData file) {
     if (widget.playlist.songs.contains(file)) {
       // and remove them from in here if they are in playlist
+      // maybe dont allow delete from in here and instead only display
+      // songs that arent in playlist like spotify
       context.read<AudioProvider>().removeSongFromPlaylist(widget.playlist, file);
     } else {
       context.read<AudioProvider>().addSongToPlaylist(widget.playlist, file);
@@ -49,10 +51,7 @@ class _PlaylistSongSelectorScreenState extends State<PlaylistSongSelectorScreen>
                           : CupertinoIcons.checkmark_alt_circle,
                     ),
                     Expanded(
-                      child: FileCard(
-                        file: audioProvider.files[index],
-                        onTap: () => setState(() => onTapSelectedSong(audioProvider.files[index])),
-                      ),
+                      child: FileCard(file: currentFile, onTap: () => setState(() => onTapSelectedSong(currentFile))),
                     ),
                   ],
                 );

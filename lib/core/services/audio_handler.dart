@@ -29,6 +29,23 @@ class MyAudioHandler extends BaseAudioHandler {
   MyAudioHandler() {
     _init();
     _notifyAudioHandlerAboutPlaybackEvents();
+    _player.currentIndexStream.listen((index) async {
+      if (index == null) return;
+      if (index == audioProvider.currentIndex) return;
+      mediaItem.add(_player.sequence[index].tag as MediaItem);
+      audioProvider.updateCurrentIndex(index);
+      // extract to method for DRY
+      await _durationSub?.cancel();
+      _durationSub = _player.durationStream.listen((duration) {
+        if (duration == null) return;
+        final current = mediaItem.value;
+        if (current == null) return;
+        mediaItem.add(current.copyWith(duration: duration));
+      });
+    });
+    // update and store position to restore session
+    // _player.positionStream.listen((position) {
+    // });
   }
 
   @override
@@ -85,14 +102,15 @@ class MyAudioHandler extends BaseAudioHandler {
   @override
   Future<void> skipToPrevious() async => await rewind();
 
-  @override
-  // ignore: avoid_renaming_method_parameters
-  Future<void> playMediaItem(MediaItem item) async {
+  Future<void> loadQueue(List<AudioSource> playlist, int initialIndex, Duration initialPosition) async {
+    List<MediaItem> mediaItems = [];
     await _player.pause();
-    final path = "${mediaDir.path}/${item.extras?["path"]}";
-    mediaItem.add(item);
-
-    await _player.setAudioSource(AudioSource.file(path));
+    await _player.setAudioSources(playlist, initialIndex: initialIndex, initialPosition: initialPosition);
+    for (IndexedAudioSource song in _player.sequence) {
+      mediaItems.add(song.tag as MediaItem);
+    }
+    mediaItem.add(_player.sequence[initialIndex].tag as MediaItem);
+    queue.add(mediaItems);
     await _durationSub?.cancel();
     _durationSub = _player.durationStream.listen((duration) {
       if (duration == null) return;

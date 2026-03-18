@@ -6,6 +6,7 @@ import 'package:gap/gap.dart';
 class ConfirmationDialog extends StatelessWidget {
   final String title;
   final String description;
+  final double titleFontSize;
   final String? confirmButtonText;
   final String? cancelButtonText;
   final bool isDelete;
@@ -13,6 +14,7 @@ class ConfirmationDialog extends StatelessWidget {
   const ConfirmationDialog({
     required this.title,
     required this.description,
+    this.titleFontSize = 21,
     this.confirmButtonText,
     this.cancelButtonText,
     this.isDelete = false,
@@ -30,9 +32,15 @@ class ConfirmationDialog extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            MyBodyText(title, fontSize: 21, fontWeight: FontWeight.w600, align: TextAlign.center, color: Colors.white),
+            MyBodyText(
+              title,
+              fontSize: titleFontSize.sp,
+              fontWeight: FontWeight.w600,
+              align: TextAlign.center,
+              color: Colors.white,
+            ),
             Gap(12.h),
-            MyBodyText(description, fontSize: 15, align: TextAlign.center, color: Colors.white),
+            MyBodyText(description, fontSize: 15.sp, align: TextAlign.center, color: Colors.white),
             Gap(24.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -48,7 +56,7 @@ class ConfirmationDialog extends StatelessWidget {
                       padding: EdgeInsets.symmetric(vertical: 12.h),
                       child: MyBodyText(
                         cancelButtonText ?? 'Cancel',
-                        fontSize: 17,
+                        fontSize: 17.sp,
                         color: Colors.white,
                         align: TextAlign.center,
                       ),
@@ -68,7 +76,7 @@ class ConfirmationDialog extends StatelessWidget {
                       padding: EdgeInsets.symmetric(vertical: 12.h),
                       child: MyBodyText(
                         confirmButtonText ?? 'Confirm',
-                        fontSize: 17,
+                        fontSize: 17.sp,
                         color: Colors.white,
                         align: TextAlign.center,
                       ),

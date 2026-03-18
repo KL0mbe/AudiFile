@@ -1,4 +1,5 @@
 import 'package:audio_player/ui/views/playback_settings/widgets/skip_row.dart';
+import 'package:audio_player/ui/widgets/app_defaults/confirmation_dialog.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
 import 'package:audio_player/core/services/default_data_service.dart';
@@ -95,9 +96,24 @@ class _OverrideSettingsScreenState extends State<OverrideSettingsScreen> {
               child: MyTextButton(
                 "Override",
                 onPressed: () async {
-                  //showdialog warning before saving
-                  await context.read<AudioProvider>().overrideCustomSettings(isSkip, rewind, fastForward, overrideAll);
-                  if (context.mounted) Navigator.pop(context);
+                  final bool? result = await showDialog(
+                    context: context,
+                    builder: (context) => ConfirmationDialog(
+                      title: "Are You Sure You Want To Override File Settings",
+                      description: "This Will ${overrideAll ? null : "not"} Override Files With Custom Settings",
+                    ),
+                  );
+                  if (result == true) {
+                    if (context.mounted) {
+                      await context.read<AudioProvider>().overrideCustomSettings(
+                        isSkip,
+                        rewind,
+                        fastForward,
+                        overrideAll,
+                      );
+                      if (context.mounted) Navigator.pop(context);
+                    }
+                  }
                 },
               ),
             ),

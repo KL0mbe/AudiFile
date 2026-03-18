@@ -1,5 +1,6 @@
 import 'package:audio_player/ui/views/playback_settings/widgets/skip_row.dart';
 import 'package:audio_player/ui/views/playback_settings/widgets/text_row.dart';
+import 'package:audio_player/ui/widgets/app_defaults/confirmation_dialog.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_text_button.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_body_text.dart';
 import 'package:audio_player/ui/widgets/app_defaults/my_app_bar.dart';
@@ -31,7 +32,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   void initState() {
     super.initState();
     currentFileCopy = getIt<AudioProvider>().currentFile!.copy();
-    // maybe change to readasbytes in initstateasync later
+    // maybe change to readasbytes in init state async later
     tempBytes = File(currentFileCopy.coverPath).readAsBytesSync();
     // breaks comparison supposedly but not in practice?
     originalBytes = tempBytes;
@@ -66,9 +67,17 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                     "Restore Settings",
                     fontSize: 12,
                     onPressed: () async {
-                      // TODO: add alertdialog warning
-                      await audioProvider.restoreDefaultSettings(currentFileCopy);
-                      if (context.mounted) Navigator.pop(context);
+                      final bool? result = await showDialog(
+                        context: context,
+                        builder: (context) => ConfirmationDialog(
+                          title: "Are you sure you want to restore settings?",
+                          description: "this will override your custom actions",
+                        ),
+                      );
+                      if (result == true) {
+                        await audioProvider.restoreDefaultSettings(currentFileCopy);
+                        if (context.mounted) Navigator.pop(context);
+                      }
                     },
                   ),
                 ),
